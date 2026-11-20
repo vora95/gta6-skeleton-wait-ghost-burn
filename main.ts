@@ -81,13 +81,21 @@ function readPostUrl(path: string): string {
 }
 
 function writeOutput(src: string): string {
+  const srcBytes = readFileSync(src);
   for (const dir of OUT_DIRS) {
     try {
       mkdirSync(dir, { recursive: true });
       const dest = join(dir, 'POST.json');
       copyFileSync(src, dest);
+      const destBytes = readFileSync(dest);
+      if (!srcBytes.equals(destBytes)) {
+        fail(`POST.json copy to ${dest} does not match the source (${srcBytes.length} bytes)`);
+      }
       return dest;
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith('gta6-meme-x-01:')) {
+        throw err;
+      }
       // The next candidate gets its turn.
     }
   }
@@ -97,4 +105,5 @@ function writeOutput(src: string): string {
 const src = findPostFile();
 const url = readPostUrl(src);
 const dest = writeOutput(src);
-console.log(`POST.json copied to ${dest} (${url})`);
+const bytes = readFileSync(dest).length;
+console.log(`POST.json copied to ${dest} (${bytes} bytes, ${url})`);
